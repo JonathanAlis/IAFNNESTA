@@ -1,3 +1,8 @@
+<script type="text/javascript" async
+src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js? 
+config=TeX-MML-AM_CHTML"
+</script>
+
 # IAFNNA: Isotropic and Anisotropic Filtering Norm NESTerov Algorithm
 A python implementation of Filtering norm with NESTA Implementation of the Isotropic and Anisotropic Filtering Norm minimization, from the paper: <https://www.researchgate.net/profile/Mylene_Farias/publication/340769023_Isotropic_and_anisotropic_filtering_norm-minimization_A_generalization_of_the_TV_and_TGV_minimizations_using_NESTA/links/5ea703c345851553fab34738/Isotropic-and-anisotropic-filtering-norm-minimization-A-generalization-of-the-TV-and-TGV-minimizations-using-NESTA.pdf>
 
@@ -19,9 +24,8 @@ We build this version over the NESTA_v1.1 implementation (https://statweb.stanfo
 The IAFNNESTA.m:
 Solves the filtering norm L1 and/or L2 minimization problem under a quadratic constraint using the Nesterov algorithm, with continuation:
 
-![\Large \min_x iaFN(Hx) s.t. ||y - Ax||_2 <= \delta](https://latex.codecogs.com/svg.latex?x%3D%5Cfrac%7B-b%5Cpm%5Csqrt%7Bb%5E2-4ac%7D%7D%7B2a%7D)
+![\Large \min_x iaFN(Hx) s.t. ||y - Ax||_2 \leq \delta](https://latex.codecogs.com/svg.latex?\Large%20\min_x%20iaFN(Hx)%20s.t.%20||y%20-%20Ax||_2%20\leq%20\delta)
 
- 
 Continuation is performed by sequentially applying Nesterov's algorithm with a decreasing sequence of values of mu0 >= mu >= muf. This version adds the following features: *Isotropic and anisotropic norms *Filtering norms *A demo for isotropic and anisotropic filtering norms for MRI radial reconstruction.
 
 For more details, see the IAFNNESTA.m, IAFNNesterov.m files.
