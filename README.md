@@ -25,22 +25,34 @@ Continuation is performed by sequentially applying Nesterov's algorithm with a d
 
 For more details, see the IAFNNESTA.m, IAFNNesterov.m files.
 
-Demo: run the IAFNNESTA.py file with python to generate the following demonstrations:
+New:
+I also included the unconstrained problem:
 
-Denoise:
-![Denoise demo](denoise.png)
+![\Large \min_x \lambda iaFN(Hx) + 1/2 ||y - Ax||_2 ](https://latex.codecogs.com/svg.latex?\Large%20\min_x%20\lambda%20iaFN(Hx)%20+%201/2%20||y%20-%20Ax||_2%20)
+For more details, see the IAFNNESTA\_UP.m, IAFNNesterov\_UP.m files.
 
-MRI L1 reconstruction:
+## Demos:
+I prepared some demos for showing how to use it in useful applications
 
-![L1 reconstruction demo](l1_demo.png)
+#### Denoising:
+run the file `demo_denoise.py`
+![Denoise demo](denoise_demo.png)
 
-MRI TV minimization reconstruction:
+#### MRI L1/TV and filtering norms reconstruction with IAFNNESTA (simulates the reconstruction on the paper):
+run `demo_mri_reconstruction.py`
+![MRI rec L1/TV](demo_mri_l1_tv.png)
+![MRI rec with filtering norms](demo_mri_filtering_norms.png)
 
-![TV reconstruction demo](tv_demo.png)
+#### Tomographic L1/TV and filtering norms reconstruction with unconstrained problem (IAFNNESTA_UP):
+run `demo_tomography.py`
+![Tomographic iradon/L1/TV reconstruction](demo_mri_l1_tv.png)
+![Tomographic reconstruction with filtering norms](demo_mri_filtering_norms.png)
 
-MRI isotropic anisotropic filtering norm reconstruction, with 8 different filters:
+#### Reconstruction with an sparse transform (Wavelet):
+run `demo_wavelet.py`
+![MRI rec L2, TV, L1 with wavelet, L1 with wavelet as H](demo_wavelet.png)
 
-![isotropic anisotropic filtering norm demo](filtering_norm_demo.png)
 
-
----------------------------------------------------------------------------------------- Created: Jul 2020, Jonathan Lima, UnB
+-
+Created: Jul 2020, Jonathan Lima, UnB
+Modification: Fev 2020
