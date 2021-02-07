@@ -1,25 +1,28 @@
 def help():
     return '''
-Isotropic-Anisotropic Filtering Norm Nesterov
+Isotropic-Anisotropic Filtering Norm Nesterov: Unrestricted Problem
 
 Solves the filtering norm minimization + quadratic term problem
 Nesterov algorithm, without continuation:
 
-     argmin_x ||  iaFN(x) ||_1/2 subjected to ||b - Ax||_2^2 < delta
+    argmin_x lambda iaFN(x) + 1/2 ||b - Ax||_2^2 
 
 If no filter is provided, solves the L1.
-If continuation is desired, see the function IAFNNESTA.m
+If continuation is desired, see the function IAFNNESTA_UP.m
 
 The primal prox-function is also adapted by accounting for a first guess
 x0 that also tends towards x_muf 
 
-The observation matrix A must be a projector (non projector not implemented yet)
+The observation matrix A need not be a projector
 
 Inputs:
-IAFNNesterov(b,                      #Observed data, a m x 1 array
-            A=identity,At=identity,     # measurement matrix and adjoint (either a matrix, function handles)                
+IAFNNesterov_UP(b,                      #Observed data, a m x 1 array
+            A=identity,At=identity,     # measurement matrix and adjoint (either a matrix, function handles)
+            Lambda=None,                #Lagrange multiplier
+                                        #Common heuristic: Lambda = sigma*sqrt(2*log(n)),
+                                        #where sigma=std(noise).
+            La=None,                    #Lipschitz constant of the quadratic term; La =  ||A||^2        
             mu=0.0001,                  #mu, smaller leads to higher accuracy
-            delta,                      #bounds of the solution deviations from measurements
             L1w=1,L2w=0,                #weights of L1 (anisotropic) and L2(isotropic) norms
             verbose=0,                  #whether to print internal steps 
             maxit=1000,                 #maximum iterations at the inner loop
@@ -41,7 +44,6 @@ return  xk,                             #estimated x reconstructed signal
 
 
 '''
-
 import numpy as np
 from scipy import sparse
 import sys
@@ -49,11 +51,11 @@ def identity(x):
     return x
 
 
-def IAFNNesterov(b,A=identity,At=identity,mu=0.0001,delta=0,L1w=1,L2w=0,verbose=0,maxit=1000,x0=[],U=identity,Ut=identity,stopTest=1,TolVar = 1e-5,AAtinv=[],normU=1,H=identity,Ht=identity):
 
-    if delta<0:
-        raise Exception('Delta must not be negative')
-
+def IAFNNesterov_UP(b,A=identity,At=identity,Lambda=None,La=None,mu=0.0001,L1w=1,L2w=0,verbose=0,maxit=1000,x0=[],U=identity,Ut=identity,stopTest=1,TolVar = 1e-5,AAtinv=[],normU=1,H=[],Ht=[]):
+    if Lambda is None or La is None:
+        print('IAFNNesterov_UP error, must provide Lambda and La')
+        exit()
     if not callable(A): #If not function
         A=lambda x:np.matmul(A,x)
         At=lambda x:np.matmul(np.transpose(A),x)
@@ -103,12 +105,11 @@ def IAFNNesterov(b,A=identity,At=identity,mu=0.0001,delta=0,L1w=1,L2w=0,verbose=
 
 
 #TV, filter, etc.
-    
+    Lmu = Lambda*Lmu + La
     Lmu1 = 1/Lmu
-    SLmu = np.sqrt(Lmu);
-    SLmu1 = 1/np.sqrt(Lmu);
-    LambdaY = 0
-    LambdaZ = 0
+    SLmu = np.sqrt(Lmu)
+    SLmu1 = 1/np.sqrt(Lmu)
+
 
     residuals=np.zeros((maxit,2))
     for k in range(maxit):
@@ -118,27 +119,19 @@ def IAFNNesterov(b,A=identity,At=identity,mu=0.0001,delta=0,L1w=1,L2w=0,verbose=
             df,fx = Perform_L2_filter_constraints(xk,mu,H,Ht,U,Ut)
         
         #ipdb.set_trace()
-
-        cp = xk - 1/Lmu*df  #;  % this is "q" in eq. (3.7) in the paper
-        Acp = A( cp )
-        AtAcp = At( Acp )
+        Axk=A(xk)
+        res = Axk - b
+        Ares=At(res)
+        df = Lambda*df + Ares
+        fx= Lambda*fx + 1/2*np.linalg.norm(res)**2
+            
+        #---- Updating yk 
+                
+        yk = xk - Lmu1*df;
+        
         residuals[k][0] = np.linalg.norm( b-Axk)
         residuals[k][1] = fx             
-            
-        if delta > 0:
-            aux=Lmu*(np.linalg.norm(b-Acp)/delta - 1)
-            Lambda = np.max([0,aux])
-            gamma = Lambda/(Lambda + Lmu)
-            yk = Lambda/Lmu*(1-gamma)*Atb + cp - gamma*AtAcp
-            #% for calculating the residual, we'll avoid calling A()
-            #% by storing A(yk) here (using A'*A = I):
-            Ayk = Lambda/Lmu*(1-gamma)*b + Acp - gamma*Acp       
-        else:
-            #% if delta is 0, the projection is simplified:
-            yk = AtAAtb + cp - AtAcp
-            Ayk = b
         
-
         #stopping criteria            
         qp = np.abs(fx - np.mean(fmean))/np.mean(fmean)
 
@@ -164,46 +157,19 @@ def IAFNNesterov(b,A=identity,At=identity,mu=0.0001,delta=0,L1w=1,L2w=0,verbose=
         
         wk =  apk*df + wk
         
-        #%
-        #% zk = Argmin_x Lmu/2 ||b - Ax||_l2^2 + Lmu/2||x - xplug ||_2^2+ <wk,x-xk> 
-        #%   s.t. ||b-Ax||_l2 < delta
-        #%
+        zk = x0 - Lmu1*wk;
         
-        cp = x0 - 1/Lmu*wk
-        
-        Acp = A( cp )
-        AtAcp = At( Acp )
-        
-        if delta > 0:
-            Lambda = max(0,Lmu*(np.linalg.norm(b-Acp)/delta - 1))
-            gamma = Lambda/(Lambda + Lmu)
-            zk = Lambda/Lmu*(1-gamma)*Atb + cp - gamma*AtAcp
-            #% for calculating the residual, we'll avoid calling A()
-            #% by storing A(zk) here (using A'*A = I):
-            Azk = Lambda/Lmu*(1-gamma)*b + Acp - gamma*Acp
-        else:
-            #% if delta is 0, this is simplified:
-            zk = AtAAtb + cp - AtAcp
-            Azk = b
-        
-
         #xk
                 
         xkp = tauk*zk + (1-tauk)*yk
         xold = xk
         xk=xkp
-        Axk = tauk*Azk + (1-tauk)*Ayk
-        
-        if k%10==0: 
-            Axk = A(xk)   #% otherwise slowly lose precision
+  
 
         if verbose>0:
             if k%verbose==0:
                 print("Iter: %3d, fmu: %.3f, Rel. Variation of fmu: %.2e ~ Residual: %.2e" %(k, fx,qp,residuals[k][0]))  
-        if np.abs(fx)>1e20 or np.abs(residuals[k][0]) >1e20 or np.isnan(fx):
-            print(fx)
-            raise Exception('Filtering Norm Nesta: possible divergence or NaN.  Bad estimate of ||A''A||?');
-    
+            
     niter = k+1
     #%-- truncate output vectors
     residuals = residuals[1:niter,:]
@@ -284,6 +250,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from PIL import Image
     import waveletDec as wd
+
+    print(help())
     # Parameters
     # ----------
     n_angles = 80 
@@ -310,18 +278,20 @@ if __name__ == "__main__":
     #samplingPos=
     
     lena= rgb2gray(np.array(Image.open('data/lena.jpg').resize((128,128)))/255)
-    #lena=lena+np.random.normal(0,0.1,lena.shape)
     
+    #lena=lena+np.random.normal(0,0.1,lena.shape)
+    plt.imshow(lena)
     U=lambda x: wd.WavDec(x,lena.shape,decLevel=3,family='haar')
     Ut=lambda x: wd.WavRec(x,lena.shape,decLevel=3,family='haar')
     xw=np.reshape(U(lena),lena.shape)
 
+    #plt.show()
     b=lena.reshape(-1,1)
-    xr=IAFNNesterov(b,delta=0.1,U=U,Ut=Ut)[0].real
-    print(xr)
-    xr=xr.reshape(lena.shape)
-    plt.imshow(xr)
-    plt.show()
+    #xr=coreNesterov(b,delta=0.1,U=U,Ut=Ut)
+    #print(xr)
+    #xr=xr.reshape(lena.shape)
+    #plt.imshow(xr)
+    #plt.show()
     print(lena.shape)
     
     #plt.imshow(xw)
@@ -336,15 +306,8 @@ if __name__ == "__main__":
     b=A(lena.reshape((-1,1)))
     plt.imshow(At(b).reshape(lena.shape))
     print("b")
-    
-    f, axarr = plt.subplots(1,3)
-    axarr[0].imshow(lena,cmap='gray')
-    axarr[1].imshow(xw,cmap='gray')
-    axarr[2].imshow(At(b).reshape(lena.shape),cmap='gray')
     plt.show()
-
-    xw
-    xr=IAFNNesterov(b,delta=0.1,A=A,At=At,U=U,Ut=Ut,verbose=10,maxit=10000)[0].real
+    xr=IAFNNesterov_UP(b,delta=0.1,A=A,At=At,U=U,Ut=Ut,verbose=10)
     plt.imshow(xr.reshape(lena.shape))
     plt.show()
 
