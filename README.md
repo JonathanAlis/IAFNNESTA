@@ -55,4 +55,4 @@ run `demo_wavelet.py`
 
 -
 Created: Jul 2020, Jonathan Lima, UnB
-Modification: Fev 2020
+Modification: Fev 2021
