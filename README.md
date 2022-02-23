@@ -40,16 +40,19 @@ run the file `demo_denoise.py`
 
 #### MRI L1/TV and filtering norms reconstruction with IAFNNESTA (simulates the reconstruction on the paper):
 run `demo_mri_reconstruction.py`
+
 ![MRI rec L1/TV](demo_mri_l1_tv.png)
 ![MRI rec with filtering norms](demo_mri_filtering_norms.png)
 
 #### Tomographic L1/TV and filtering norms reconstruction with unconstrained problem (IAFNNESTA_UP):
 run `demo_tomography.py`
-![Tomographic iradon/L1/TV reconstruction](demo_mri_l1_tv.png)
-![Tomographic reconstruction with filtering norms](demo_mri_filtering_norms.png)
+
+![Tomographic iradon/L1/TV reconstruction](demo_tomo_l1_tv.png)
+![Tomographic reconstruction with filtering norms](demo_tomo_filtering_norms.png)
 
 #### Reconstruction with an sparse transform (Wavelet):
 run `demo_wavelet.py`
+
 ![MRI rec L2, TV, L1 with wavelet, L1 with wavelet as H](demo_wavelet.png)
 
 
