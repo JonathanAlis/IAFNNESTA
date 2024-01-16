@@ -1,7 +1,7 @@
 import numpy as np 
 import math
 import matplotlib.pyplot as plt
-def radial2D(N,s,golden=True,extend=False, show=False):
+def radial2D(N,s,golden=True,extend=False):
     z=np.zeros(s)
     num_points=2*np.max(s)
     golden=math.pi*(3-math.sqrt(5))
@@ -17,17 +17,23 @@ def radial2D(N,s,golden=True,extend=False, show=False):
             yi=math.floor(midy+midy*y)
             if xi<s[0] and yi<s[1]:
                 z[xi,yi]=1
-    
-    if show:
-        plt.imshow(z)
-        plt.show()
 
     z=np.fft.ifftshift(z)
     z=z.reshape((-1,1))
     idx= [i for i, x in enumerate(z) if x == 1]
-    
-    
+      
     return idx
+
+def view_positions(idx, shape, measurements=None):
+    y=np.zeros(shape)
+    y=y.reshape((-1,1))
+    if measurements is None:        
+        y[idx]=1
+    else:
+        y[idx] = measurements
+    y=y.reshape(shape)
+    y=np.fft.fftshift(y)
+    return y
 
 if __name__ == "__main__":
     idx=radial2D(10,(128,128),show=True)

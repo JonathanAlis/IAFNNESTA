@@ -27,7 +27,7 @@ if __name__ == "__main__":
     from skimage.transform import resize
     image=np.array(Image.open('data/lena.jpg').convert('L'))
     image=resize(image,(128,128))
-    image=image.astype(np.float)/np.max(image[...])
+    image=image.astype(float)/np.max(image[...])
     #random sampling:
     numpoints=int(128*128/2)
     idx=np.random.permutation(np.arange(0, 128*128).tolist())
